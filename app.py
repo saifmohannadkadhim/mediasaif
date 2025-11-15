@@ -12,6 +12,34 @@ from dotenv import load_dotenv
 import os
 import io
 from PIL import Image
+def convert_to_syrian_month(date_str):
+    syrian_months = {
+        "January": "كانون الثاني",
+        "February": "شباط",
+        "March": "آذار",
+        "April": "نيسان",
+        "May": "أيار",
+        "June": "حزيران",
+        "July": "تموز",
+        "August": "آب",
+        "September": "أيلول",
+        "October": "تشرين الأول",
+        "November": "تشرين الثاني",
+        "December": "كانون الأول"
+    }
+
+    try:
+        import datetime
+        parsed_date = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        month_name = parsed_date.strftime("%B")
+        syrian_month = syrian_months.get(month_name, month_name)
+        return parsed_date.strftime(f"%-d {syrian_month} %Y")
+    except:
+        return date_str  # لو فشل التحويل نعيد النص كما هو
+
+
+
+
 st.set_page_config(page_title="المكتب الإعلامي الذكي", layout="centered")
 st.markdown("""
 <style>
@@ -163,35 +191,59 @@ client = OpenAI(api_key=api_key)
 # قالب البرومبت الرئيسي
 # -------------------------------------------
 news_prompt = """
-أنت محرر صحفي متخصص في كتابة الأخبار الرسمية داخل مكتب إعلامي حكومي. مهمتك هي تحويل المدخلات التالية إلى خبر صحفي رسمي مكتمل العناصر، مكتوب بلغة إعلامية فصيحة، منسقة، وحيادية، وجاهزة للنشر في المنصات الرسمية.
-
-🧾 سيتم تزويدك بالمعلومات التالية:
-- عنوان مؤقت أو كلمات مفتاحية
-- معلومات عامة عن الحدث
-- التاريخ والمكان
-- الجهة المنظمة أو المتحدث الرسمي
-- تصريحات أو اقتباسات
-- تفاصيل إضافية متعلقة بالسياق أو الأهداف أو الأثر المتوقع
-
-🎯 المطلوب منك:
-1. توليد عنوان احترافي مختصر يعكس مضمون الحدث بدقة.
-2. كتابة مقدمة صحفية واضحة تتضمن أهم المعلومات.
-3. صياغة تفاصيل الحدث بفقرات مترابطة.
-4. إنهاء الخبر بفقرة ختامية توضّح أهمية الخطوة وتأثيرها.
-5. كتابة فصيحة، رسمية، وحيادية.
+أنت محرر صحفي متخصص في صياغة الأخبار الرسمية داخل مكتب إعلامي حكومي. سيتم تزويدك بأربع حقول فقط، ومطلوب منك إنتاج خبر صحفي رسمي مكتوب بلغة عربية فصيحة، منظمة، واضحة، وحيادية، وجاهز للنشر فورًا.
 
 🔽 المدخلات:
 
-- 📰 عنوان مؤقت: {headline}  
-- 🗓️ الزمان: {time}  
-- 📍 المكان: {location}  
-- 🏛️ الجهة المنظمة أو المتحدث الرسمي: {speaker}  
-- 📄 تفاصيل عامة عن الحدث: {details}  
-- 💬 تصريحات واقتباسات: {quotes}  
-- 🧩 معلومات ختامية: {closing_notes}
+- 📰 العنوان: {headline}
+- 🧩 المعلومات الأولية عن الحدث: {main_info}
+- 🗣️ التصريحات: {quotes}
+- 📚 خلفية الخبر: {background}
 
-✏️ المطلوب النهائي: إعادة صياغة هذه المعلومات كخبر صحفي رسمي جاهز للنشر.
+🎯 المطلوب منك:
+
+1. صياغة عنوان احترافي مختصر ودقيق.
+2. كتابة مقدمة خبر إعلامية قوية وواضحة وفق الهرم المقلوب.
+3. ترتيب المعلومات وتقديمها بشكل مترابط ومهني.
+4. دمج الخلفية إذا كانت ضرورية، أو اختزالها إن لم تكن مهمة.
+5. كتابة فصيحة، رسمية، وحيادية بدون إضافة أي تفاصيل غير موجودة.
+
+✏️ أعد صياغة المدخلات كخبر صحفي رسمي مكتمل العناصر وجاهز للنشر.
 """
+
+
+
+
+# news_prompt = """
+# أنت محرر صحفي متخصص في كتابة الأخبار الرسمية داخل مكتب إعلامي حكومي. مهمتك هي تحويل المدخلات التالية إلى خبر صحفي رسمي مكتمل العناصر، مكتوب بلغة إعلامية فصيحة، منسقة، وحيادية، وجاهزة للنشر في المنصات الرسمية.
+
+# 🧾 سيتم تزويدك بالمعلومات التالية:
+# - عنوان مؤقت أو كلمات مفتاحية
+# - معلومات عامة عن الحدث
+# - التاريخ والمكان
+# - الجهة المنظمة أو المتحدث الرسمي
+# - تصريحات أو اقتباسات
+# - تفاصيل إضافية متعلقة بالسياق أو الأهداف أو الأثر المتوقع
+
+# 🎯 المطلوب منك:
+# 1. توليد عنوان احترافي مختصر يعكس مضمون الحدث بدقة.
+# 2. كتابة مقدمة صحفية واضحة تتضمن أهم المعلومات.
+# 3. صياغة تفاصيل الحدث بفقرات مترابطة.
+# 4. إنهاء الخبر بفقرة ختامية توضّح أهمية الخطوة وتأثيرها.
+# 5. كتابة فصيحة، رسمية، وحيادية.
+
+# 🔽 المدخلات:
+
+# - 📰 عنوان مؤقت: {headline}  
+# - 🗓️ الزمان: {time}  
+# - 📍 المكان: {location}  
+# - 🏛️ الجهة المنظمة أو المتحدث الرسمي: {speaker}  
+# - 📄 تفاصيل عامة عن الحدث: {details}  
+# - 💬 تصريحات واقتباسات: {quotes}  
+# - 🧩 معلومات ختامية: {closing_notes}
+
+# ✏️ المطلوب النهائي: إعادة صياغة هذه المعلومات كخبر صحفي رسمي جاهز للنشر.
+# """
 
 # -------------------------------------------
 # واجهة Streamlit
@@ -230,16 +282,28 @@ div[data-baseweb="tab"][aria-selected="true"] {
 with tab1:
     st.title("📰 المولد الذكي للأخبار الإعلامية")
     with st.form("news_form"):
-        event_type = st.text_input("نوع الحدث (مؤتمر، تصريح، فعالية...)")
-        headline = st.text_input("عنوان مؤقت أو كلمات مفتاحية")
-        details = st.text_area("تفاصيل الحدث (ما حدث، منو حضر، شنو أعلنوا...)")
-        time = st.text_input("الزمان (مثلاً: 14 نوفمبر 2025)")
-        location = st.text_input("المكان")
-        speaker = st.text_input("المتحدث أو الجهة المنظمة")
-        quotes = st.text_area("تصريحات أو اقتباسات مهمة")
-        closing_notes = st.text_area("ملاحظات ختامية (الأهداف، التأثير المتوقع، سياق إضافي)")
+        from datetime import date
+        selected_date = st.date_input("📅 تاريخ الحدث", value=date.today())
+        headline = st.text_input("📝 العنوان المؤقت أو الرئيسي")
+        main_info = st.text_area("🧩 المعلومات الأولية (تشمل: النشاط، الزمان، المكان، الجهة، الحضور، السبب...)")
+        quotes = st.text_area("🗣️ التصريحات أو الاقتباسات الرسمية")
+        background = st.text_area("📚 خلفية الخبر (اختياري)", placeholder="يمكن تركه فارغًا إذا لا توجد خلفية مهمة")
 
-        submitted = st.form_submit_button("صياغة الخبر")
+        submitted = st.form_submit_button("📝 صياغة الخبر الرسمي")
+
+
+    
+    # with st.form("news_form"):
+    #     event_type = st.text_input("نوع الحدث (مؤتمر، تصريح، فعالية...)")
+    #     headline = st.text_input("عنوان مؤقت أو كلمات مفتاحية")
+    #     details = st.text_area("تفاصيل الحدث (ما حدث، منو حضر، شنو أعلنوا...)")
+    #     time = st.text_input("الزمان (مثلاً: 14 نوفمبر 2025)")
+    #     location = st.text_input("المكان")
+    #     speaker = st.text_input("المتحدث أو الجهة المنظمة")
+    #     quotes = st.text_area("تصريحات أو اقتباسات مهمة")
+    #     closing_notes = st.text_area("ملاحظات ختامية (الأهداف، التأثير المتوقع، سياق إضافي)")
+
+    #     submitted = st.form_submit_button("صياغة الخبر")
     
     
   
@@ -248,17 +312,23 @@ with tab1:
     # توليد الخبر الأولي وتخزينه
     # -------------------------------------------
     st.divider()
+    # تحويل التاريخ إلى صيغة سريانية
+    formatted_date = convert_to_syrian_month(str(selected_date))
+
+    # إدراج التاريخ داخل بداية المعلومات الأولية
+    main_info = f"{formatted_date}\n\n{main_info}"
+
 
     if submitted:
         prompt = news_prompt.format(
-            headline=headline,
-            time=time,
-            location=location,
-            speaker=speaker,
-            details=details,
-            quotes=quotes,
-            closing_notes=closing_notes if closing_notes else "لا توجد ملاحظات ختامية إضافية"
+        headline=headline,
+        main_info=main_info,
+        quotes=quotes,
+        background=background if background else "لا توجد"
         )
+
+        
+
 
         with st.spinner("جاري توليد الخبر..."):
             response = client.chat.completions.create(
@@ -277,6 +347,48 @@ with tab1:
         result = st.session_state["raw_result"]
         st.subheader("📄 الخبر الناتج:")
         st.text_area("📄 الخبر الناتج (قابل للتعديل)", key="raw_result", height=300)
+        # ✅ أزرار المشاركة في واتساب، تيليغرام، نسخ
+        st.markdown("### 🔗 مشاركة الخبر:")
+
+        # نجهز النص بشكل مشفّر للرابط
+        #from urllib.parse import quote
+        from urllib.parse import quote_plus
+        encoded_msg = quote_plus(result)
+
+
+        #encoded_msg = quote(result)
+
+        whatsapp_url = f"https://api.whatsapp.com/send?text={encoded_msg}"
+        telegram_url = f"https://t.me/share?text={encoded_msg}"
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown(f"""
+                <a href="{whatsapp_url}" target="_blank">
+                    <button style="width: 100%; padding: 10px; background-color: #25D366; color: white; border: none; border-radius: 6px; font-size: 16px;">
+                        📤 واتساب
+                    </button>
+                </a>
+            """, unsafe_allow_html=True)
+
+        # with col2:
+        #     st.markdown(f"""
+        #         <a href="{telegram_url}" target="_blank">
+        #             <button style="width: 100%; padding: 10px; background-color: #0088cc; color: white; border: none; border-radius: 6px; font-size: 16px;">
+        #                 📤 تيليغرام
+        #             </button>
+        #         </a>
+        #     """, unsafe_allow_html=True)
+
+        # with col3:
+        #     st.markdown("""
+        #         <button onclick="navigator.clipboard.writeText(document.querySelector('textarea[aria-label=\'📄 الخبر الناتج (قابل للتعديل)\']').value); alert('✅ تم نسخ الخبر إلى الملاحظات!')" 
+        #         style="width: 100%; padding: 10px; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-size: 16px;">
+        #             📋 نسخ إلى الملاحظات
+        #         </button>
+        #     """, unsafe_allow_html=True)
+
 
 
         # زر لتحميل الخبر الخام
@@ -324,7 +436,60 @@ with tab1:
     if "refined_result" in st.session_state:
         refined_result = st.session_state["refined_result"]
         st.subheader("✅ الخبر النهائي الجاهز للنشر:")
+        uploaded_image = st.file_uploader("📸 تحميل صورة مع الخبر (اختياري)", type=["png", "jpg", "jpeg"])
+
+        
         st.text_area("✅ الخبر النهائي الجاهز للنشر (قابل للتعديل)",  key="refined_result", height=300)
+        if uploaded_image:
+            # فتح الصورة باستخدام PIL
+            image = Image.open(uploaded_image)
+
+            # تحديد عرض ثابت مثلاً 600 بكسل، وارتفاع تناسبي
+            base_width = 300
+            w_percent = (base_width / float(image.size[0]))
+            h_size = int((float(image.size[1]) * float(w_percent)))
+            resized_image = image.resize((base_width, h_size))
+
+            # عرض الصورة بعد التعديل
+            st.image(resized_image)
+
+            # حفظها مؤقتًا للتحميل
+            import io
+            image_bytes = io.BytesIO()
+            resized_image.save(image_bytes, format="PNG")
+            image_bytes.seek(0)
+
+            st.download_button(
+                label="📥 تحميل الصورة بالحجم الجديد",
+                data=image_bytes,
+                file_name="الصورة_المعدلة.png",
+                mime="image/png"
+            )
+            uploaded_image.seek(0)  # تأكد أن المؤشر في البداية
+            st.session_state["uploaded_image"] = {
+                "data": uploaded_image.read(),
+                "name": uploaded_image.name,
+                "type": uploaded_image.type
+            }
+        # ✅ زر واتساب بعد الخبر النهائي المرتب
+        from urllib.parse import quote_plus
+
+        # تشفير الخبر النهائي للربط
+        encoded_final_news = quote_plus(refined_result)
+
+        # رابط واتساب
+        whatsapp_url_final = f"https://api.whatsapp.com/send?text={encoded_final_news}"
+
+        # عرض الزر
+        st.markdown("### 🔗 مشاركة الخبر النهائي عبر واتساب:")
+        st.markdown(f"""
+            <a href="{whatsapp_url_final}" target="_blank">
+                <button style="width: 100%; padding: 10px; background-color: #25D366; color: white; border: none; border-radius: 6px; font-size: 16px;">
+                    📤 إرسال إلى واتساب
+                </button>
+            </a>
+        """, unsafe_allow_html=True)
+
 
         # زر تحميل الخبر المرتب
         refined_txt = io.BytesIO()
@@ -887,6 +1052,16 @@ with tab4:
 
 
     if send_now:
+        if "uploaded_image" in st.session_state:
+            st.markdown("#### 🖼️ معاينة الصورة المرفقة:")
+            try:
+                import io
+
+                image_data = st.session_state["uploaded_image"]["data"]
+                image = Image.open(io.BytesIO(image_data))
+                st.image(image, caption=st.session_state["uploaded_image"]["name"], width=300)
+            except Exception as e:
+                st.warning(f"تعذر عرض الصورة: {e}")
         selected_content = ""
 
         if version_choice == "📄 الخبر الخام":
@@ -912,6 +1087,21 @@ with tab4:
                 msg["Subject"] = email_subject
                 msg["From"] = os.getenv("SMTP_SENDER_EMAIL")
                 msg["To"] = email_to
+                # ✅ إرفاق الصورة إذا كانت مرفوعة في tab1
+                if "uploaded_image" in st.session_state:
+                    uploaded_image = st.session_state["uploaded_image"]
+                    image_data = uploaded_image["data"]
+                    image_name = uploaded_image["name"]
+                    image_type = uploaded_image["type"]
+
+
+                    msg.add_attachment(
+                        image_data,
+                        maintype="image",
+                        subtype=image_type.split("/")[-1],
+                        filename=image_name
+                    )
+
 
                 smtp_server = "smtp.gmail.com"
                 smtp_port = 587
